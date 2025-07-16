@@ -1,14 +1,13 @@
 # Financial Research Agent Example
 
-This example shows how you might compose a richer financial research agent using the Agents SDK. The pattern is similar to the `research_bot` example, but with more specialized sub‑agents and a verification step.
+This example demonstrates how to build a weekly news digest for a set of portfolio companies using the Agents SDK.
 
 The flow is:
 
-1. **Planning**: A planner agent turns the end user’s request into a list of search terms relevant to financial analysis – recent news, earnings calls, corporate filings, industry commentary, etc.
-2. **Search**: A search agent uses the built‑in `WebSearchTool` to retrieve terse summaries for each search term. (You could also add `FileSearchTool` if you have indexed PDFs or 10‑Ks.)
-3. **Sub‑analysts**: Additional agents (e.g. a fundamentals analyst and a risk analyst) are exposed as tools so the writer can call them inline and incorporate their outputs.
-4. **Writing**: A senior writer agent brings together the search snippets and any sub‑analyst summaries into a long‑form markdown report plus a short executive summary.
-5. **Verification**: A final verifier agent audits the report for obvious inconsistencies or missing sourcing.
+1. **Planning**: The planner agent creates search queries to surface the most important headlines from the past week.
+2. **Search**: The search agent gathers recent news snippets for each query.
+3. **Writing**: The writer agent compiles a short markdown summary and lists the news sources.
+4. **Verification**: A verifier agent checks the output for consistency.
 
 You can run the example with:
 
@@ -16,23 +15,27 @@ You can run the example with:
 python -m examples.financial_research_agent.main
 ```
 
-and enter a query like:
-
-```
-Write up an analysis of Apple Inc.'s most recent quarter.
-```
+The script generates reports for the companies listed in `main.py` and emails
+them to the configured recipients.
+Edit the `PORTFOLIO_COMPANIES`, `EMAIL_RECIPIENTS`, and `EMAIL_SENDER`
+constants in that file to customize the run.
 
 ### Starter prompt
 
 The writer agent is seeded with instructions similar to:
 
 ```
-You are a senior financial analyst. You will be provided with the original query
-and a set of raw search summaries. Your job is to synthesize these into a
-long‑form markdown report (at least several paragraphs) with a short executive
-summary. You also have access to tools like `fundamentals_analysis` and
-`risk_analysis` to get short specialist write‑ups if you want to incorporate them.
-Add a few follow‑up questions for further research.
+You are a financial news analyst. You will be provided with the original query
+and recent search summaries. Produce a concise markdown report summarizing the
+most relevant headlines from the past week and list the sources.
 ```
 
 You can tweak these prompts and sub‑agents to suit your own data sources and preferred report structure.
+
+## Adapting for portfolio companies
+
+This example already loops over a short list of portfolio companies and emails
+a weekly digest. Use `send_email_agent` (see `agents/send_email_agent.py`) if
+you want to integrate with your own SMTP settings. The manager exposes a
+`recipient` argument on `run()` so you can forward the final markdown to any
+address.

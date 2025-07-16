@@ -8,20 +8,14 @@ from rich.console import Console
 
 from agents import Runner, RunResult, custom_span, gen_trace_id, trace
 
-from .agents.financials_agent import financials_agent
 from .agents.planner_agent import FinancialSearchItem, FinancialSearchPlan, planner_agent
-from .agents.risk_agent import risk_agent
 from .agents.search_agent import search_agent
 from .agents.verifier_agent import VerificationResult, verifier_agent
 from .agents.writer_agent import FinancialReportData, writer_agent
+from .agents.send_email_agent import EmailParams, send_email_agent
 from .printer import Printer
 
 
-async def _summary_extractor(run_result: RunResult) -> str:
-    """Custom output extractor for sub‑agents that return an AnalysisSummary."""
-    # The financial/risk analyst agents emit an AnalysisSummary with a `summary` field.
-    # We want the tool call to return just that summary text so the writer can drop it inline.
-    return str(run_result.final_output.summary)
 
 
 class FinancialResearchManager:
@@ -33,7 +27,7 @@ class FinancialResearchManager:
         self.console = Console()
         self.printer = Printer(self.console)
 
-    async def run(self, query: str) -> None:
+    async def run(self, query: str, recipient: str | None = None) -> None:
         trace_id = gen_trace_id()
         with trace("Financial research trace", trace_id=trace_id):
             self.printer.update_item(
@@ -45,8 +39,14 @@ class FinancialResearchManager:
             self.printer.update_item("start", "Starting financial research...", is_done=True)
             search_plan = await self._plan_searches(query)
             search_results = await self._perform_searches(search_plan)
+            if not search_results:
+                self.printer.update_item("no_results", "No relevant news found", is_done=True)
+                self.printer.end()
+                return
             report = await self._write_report(query, search_results)
             verification = await self._verify_report(report)
+            if recipient is not None:
+                await self._send_email(recipient, f"Research report: {query}", report.markdown_report)
 
             final_report = f"Report summary\n\n{report.short_summary}"
             self.printer.update_item("final_report", final_report, is_done=True)
@@ -97,19 +97,8 @@ class FinancialResearchManager:
             return None
 
     async def _write_report(self, query: str, search_results: Sequence[str]) -> FinancialReportData:
-        # Expose the specialist analysts as tools so the writer can invoke them inline
-        # and still produce the final FinancialReportData output.
-        fundamentals_tool = financials_agent.as_tool(
-            tool_name="fundamentals_analysis",
-            tool_description="Use to get a short write‑up of key financial metrics",
-            custom_output_extractor=_summary_extractor,
-        )
-        risk_tool = risk_agent.as_tool(
-            tool_name="risk_analysis",
-            tool_description="Use to get a short write‑up of potential red flags",
-            custom_output_extractor=_summary_extractor,
-        )
-        writer_with_tools = writer_agent.clone(tools=[fundamentals_tool, risk_tool])
+        # For this news-focused workflow we call the writer directly without sub-analyst tools.
+        writer_with_tools = writer_agent
         self.printer.update_item("writing", "Thinking about report...")
         input_data = f"Original query: {query}\nSummarized search results: {search_results}"
         result = Runner.run_streamed(writer_with_tools, input_data)
@@ -133,3 +122,9 @@ class FinancialResearchManager:
         result = await Runner.run(verifier_agent, report.markdown_report)
         self.printer.mark_item_done("verifying")
         return result.final_output_as(VerificationResult)
+
+    async def _send_email(self, recipient: str, subject: str, body: str) -> None:
+        self.printer.update_item("email", "Sending email...")
+        params = EmailParams(recipient=recipient, subject=subject, body=body)
+        await Runner.run(send_email_agent, params)
+        self.printer.mark_item_done("email")
