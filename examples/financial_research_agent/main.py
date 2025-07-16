@@ -9,6 +9,7 @@ from .manager import FinancialResearchManager
 # "Write up an analysis of Apple Inc.'s most recent quarter."
 async def main() -> None:
     query = input("Enter a financial research query: ")
+
     mgr = FinancialResearchManager()
     await mgr.run(query)
 
