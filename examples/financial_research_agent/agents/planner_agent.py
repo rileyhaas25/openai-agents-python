@@ -2,15 +2,13 @@ from pydantic import BaseModel
 
 from agents import Agent
 
-# Generate a plan of searches to ground the financial analysis.
-# For a given financial question or company, we want to search for
-# recent news, official filings, analyst commentary, and other
-# relevant background.
+# Generate a plan of searches to gather relevant news headlines.
+# Focus on stories from the last 7 days about the target company.
 PROMPT = (
-    "You are a financial research planner. Given a request for financial analysis, "
-    "produce a set of web searches to gather the context needed. Aim for recent "
-    "headlines, earnings calls or 10‑K snippets, analyst commentary, and industry background. "
-    "Output between 5 and 15 search terms to query for."
+    "You are a research planner tasked with surfacing important news. "
+    "Given a request, produce concise search queries that will locate the most "
+    "notable headlines about the company from the past week (the past 7 days). Only suggest terms "
+    "that are likely to reveal significant events or announcements. Output between 5 and 10 queries."
 )
 
 

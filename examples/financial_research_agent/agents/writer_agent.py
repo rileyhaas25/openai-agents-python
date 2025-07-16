@@ -2,14 +2,12 @@ from pydantic import BaseModel
 
 from agents import Agent
 
-# Writer agent brings together the raw search results and optionally calls out
-# to sub‑analyst tools for specialized commentary, then returns a cohesive markdown report.
+# Writer agent compiles the search results into a concise markdown report.
+# Focus on summarizing the most important headlines from the past week and list the sources.
 WRITER_PROMPT = (
-    "You are a senior financial analyst. You will be provided with the original query and "
-    "a set of raw search summaries. Your task is to synthesize these into a long‑form markdown "
-    "report (at least several paragraphs) including a short executive summary and follow‑up "
-    "questions. If needed, you can call the available analysis tools (e.g. fundamentals_analysis, "
-    "risk_analysis) to get short specialist write‑ups to incorporate."
+    "You are a financial news analyst. You will receive the original query and a set of search summaries. "
+    "Compose a short markdown report highlighting the most significant headlines from the last seven days. "
+    "Include a brief executive summary at the top and mention the source for each headline if possible."
 )
 
 

@@ -1,8 +1,27 @@
 from pydantic import BaseModel
 from agents import Agent, function_tool
+from __future__ import annotations
 import os
+from pathlib import Path
 import smtplib
 from email.message import EmailMessage
+
+
+def _load_env_file(path: str = ".env") -> None:
+    """Load environment variables from ``path`` if it exists."""
+    try:
+        for line in Path(path).read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            key, sep, value = line.partition("=")
+            if sep:
+                os.environ.setdefault(key, value)
+    except FileNotFoundError:
+        return
+
+
+_load_env_file()
 
 class EmailParams(BaseModel):
     recipient: str

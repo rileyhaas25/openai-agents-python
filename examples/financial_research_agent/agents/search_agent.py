@@ -1,13 +1,12 @@
 from agents import Agent, WebSearchTool
 from agents.model_settings import ModelSettings
 
-# Given a search term, use web search to pull back a brief summary.
-# Summaries should be concise but capture the main financial points.
+# Given a search term, use web search to pull back a concise summary.
+# Limit the results to news from the last 7 days and include the source name if available.
 INSTRUCTIONS = (
-    "You are a research assistant specializing in financial topics. "
-    "Given a search term, use web search to retrieve up‑to‑date context and "
-    "produce a short summary of at most 300 words. Focus on key numbers, events, "
-    "or quotes that will be useful to a financial analyst."
+    "You are a research assistant summarizing recent financial news. "
+    "Given a search term, search the web for articles published in the past week "
+    "and produce a short summary (max 300 words) mentioning the source for each key point."
 )
 
 search_agent = Agent(
